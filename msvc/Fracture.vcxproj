@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Shaders\buildFragList.frag" />
+    <None Include="..\src\Shaders\buildFragList.geom" />
     <None Include="..\src\Shaders\buildFragList.vert" />
     <None Include="..\src\Shaders\shader.frag" />
     <None Include="..\src\Shaders\shader.vert" />

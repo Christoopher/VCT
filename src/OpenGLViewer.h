@@ -57,7 +57,8 @@ GLGeometryTransform transformPipeline;
 GLuint acBuffer;
 //xyz buffer
 GLuint xyzBuffer;
-int XYZ_BUFFER_SIZE = 600*600*sizeof(float)*3;
+//int XYZ_BUFFER_SIZE = 600*600*sizeof(float)*3;
+int XYZ_BUFFER_SIZE = 1000000*sizeof(float)*3;
 //xyzBuffer global memory addresses
 GLuint64EXT xyzBufferGPUAddress=0;
 
@@ -165,8 +166,8 @@ void Resize()
 
 
 	// Calculate the projection matrix and bind it to shader
-	viewFrustum.SetPerspective(45.0f, (GLfloat) winw / (GLfloat) winh, 1.0f, 10000000.0f);	
-	//viewFrustum.SetOrthographic(0,winw,0,winh,1.0f,100000.0f);
+	//viewFrustum.SetPerspective(45.0f, (GLfloat) winw / (GLfloat) winh, 1.0f, 10000000.0f);	
+	viewFrustum.SetOrthographic(-10,10,-10,10,-10,10);
 	projectionMatrix.LoadMatrix(viewFrustum.GetProjectionMatrix());
 
 	transformPipeline.SetMatrixStacks(modelViewMatrix,projectionMatrix);
@@ -179,7 +180,7 @@ void Resize()
 void OpenGl_drawAndUpdate(bool &running)
 {
 	//Disable vsync
-	wglSwapIntervalEXT(0);
+	//wglSwapIntervalEXT(0);
 	
 	getOpenGLError();
 	running = !glfwGetKey( GLFW_KEY_ESC ) && glfwGetWindowParam( GLFW_OPENED );
@@ -198,6 +199,7 @@ void OpenGl_drawAndUpdate(bool &running)
 	modelViewMatrix.Translate(posDx,posDy,zoom);
 	modelViewMatrix.Rotate(-rotDx,1.0f,0.0f,0.0f);
 	modelViewMatrix.Rotate(-rotDy,0.0f,1.0f,0.0f);
+	
 
 
 	//Clear the buffer color and depth
@@ -223,7 +225,9 @@ void OpenGl_drawAndUpdate(bool &running)
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+
 	DrawModel(model);
+
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	//glDrawElements(GL_TRIANGLES, 2*3, GL_UNSIGNED_INT, quadIndices);
@@ -255,7 +259,7 @@ void OpenGl_drawAndUpdate(bool &running)
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, acBuffer);
 	GLuint * acValue = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
 												 GL_MAP_WRITE_BIT);
-	//std::cout << "acCount: " << acValue[0] << "\n";	
+	std::cout << "acCount: " << acValue[0] << "\n";	
 	acValue[0] = 0;
 	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
@@ -278,18 +282,8 @@ void OpenGl_drawAndUpdate(bool &running)
 	{
 		std::cout << "xyz : " << h_xyzBuffer[i] << ", " << h_xyzBuffer[i*3+1] << ", " << h_xyzBuffer[i*3+2] << " \n";
 	}
-	std::cout << std::endl;*/
+	std::cout << std::endl;
 
-	/*int size = 100*100;
-	std::cout << "*** XYZ BUFFER *** \n";
-	std::cout << std::scientific;
-	for(int i = 0; i < size; ++i) {
-		std::cout << "xyz: " << xyzValue[i*3] << ", " << xyzValue[i*3+1] << ", " << xyzValue[i*3+2] << "\n";
-	}
-	std::cout << "*** ************** *** \n";
-	*/
-	
-	/*
 	bool ok = glUnmapBuffer(GL_ARRAY_BUFFER);
 	if(!ok)
 		std::cout << "corrupt data\n";
@@ -318,6 +312,7 @@ initShader()
 	
 	fragListShader.addShader("../../src/Shaders/buildFragList.vert", Shader::VERTEX_SHADER);
 	fragListShader.addShader("../../src/Shaders/buildFragList.frag", Shader::FRAGMENT_SHADER);
+	fragListShader.addShader("../../src/Shaders/buildFragList.geom", Shader::GEOMETRY_SHADER);
 	fragListShader.addAttribute("vertex");
 	fragListShader.addAttribute("normal");
 	fragListShader.addAttribute("texCoords");
@@ -472,7 +467,7 @@ void OpenGl_initViewer(int width_, int height_)
 	glShadeModel(GL_SMOOTH);
 
 	//Move the camera back 5 units
-	cameraFrame.SetOrigin(0.0f,0.0f,10.0);
+	cameraFrame.SetOrigin(0.0f,0.0f,5.0);
 	transformPipeline.SetMatrixStacks(modelViewMatrix,projectionMatrix);
 
 

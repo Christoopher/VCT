@@ -6,9 +6,10 @@
 
 #include "OpenGLViewer.h"
 
+
 int main(void)
 {
-	
+
 	OpenGl_initViewer(600, 600);
 		
 	while(running) {

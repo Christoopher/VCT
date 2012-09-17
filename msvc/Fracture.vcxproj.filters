@@ -64,5 +64,8 @@
     <None Include="..\src\Shaders\buildFragList.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\src\Shaders\buildFragList.geom">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
