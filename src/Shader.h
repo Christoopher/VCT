@@ -24,6 +24,15 @@ public:
 		TESSELATION_SHADER
 	} Type;
 
+	~Shader()
+	{
+		std::map<std::string,_Shader>::iterator it;
+		for(it = _shaders.begin(); it != _shaders.end(); ++it) {
+			glDetachShader(_program,it->second._handle);
+		}
+		glDeleteShader(_program);
+	}
+
 	void
 	addShader(std::string shader, Type type)
 	{

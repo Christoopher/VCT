@@ -102,6 +102,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\CPUOctree.h" />
     <ClInclude Include="..\src\loadobj.h" />
     <ClInclude Include="..\src\ObjLoader.h" />
     <ClInclude Include="..\src\OpenGLViewer.h" />

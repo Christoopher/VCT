@@ -50,6 +50,9 @@
     <ClInclude Include="..\src\loadobj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\CPUOctree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Shaders\shader.frag">

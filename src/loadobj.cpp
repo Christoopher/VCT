@@ -854,7 +854,9 @@ void DrawModel(Model *m)
 	{
 		glBindVertexArray(m->vao);	// Select VAO
 		glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
+		glBindVertexArray(0);	// DEEESelect VAO
 	}
+
 }
 
 void DrawWireframeModel(Model *m)
