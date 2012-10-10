@@ -83,7 +83,7 @@ void main()
 		rot = rot2Y; //Project on Y-Axis     BLUE
 	}
 
-	//if(axis == 0) {		
+	//if(axis == 1) {	
 		vec4 hPixel = vec4(1.0f/gridDim);
 		vec4 projPos[3];
 		vec4 finalPos;

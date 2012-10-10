@@ -53,6 +53,9 @@
     <ClInclude Include="..\src\CPUOctree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Shaders\shader.frag">
@@ -68,6 +71,12 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\src\Shaders\buildFragList.geom">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\src\Shaders\voxelShader.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\src\Shaders\voxelShader.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

@@ -108,6 +108,7 @@
     <ClInclude Include="..\src\OpenGLViewer.h" />
     <ClInclude Include="..\src\Shader.h" />
     <ClInclude Include="..\src\Timing\hr_time.h" />
+    <ClInclude Include="..\src\Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Shaders\buildFragList.frag" />
@@ -115,6 +116,8 @@
     <None Include="..\src\Shaders\buildFragList.vert" />
     <None Include="..\src\Shaders\shader.frag" />
     <None Include="..\src\Shaders\shader.vert" />
+    <None Include="..\src\Shaders\voxelShader.frag" />
+    <None Include="..\src\Shaders\voxelShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

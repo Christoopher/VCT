@@ -16,15 +16,16 @@ int main(void)
 	
 	OpenGl_initViewer(256, 256);
 		
-//	while(running) {
+	while(running) {
 			
 		//Draw
 	OpenGl_drawAndUpdate(running);
-//	}
+	}
 
 	//do something nice with h_xyzBuffer
-	std::vector<Vec3i> buffer;	
-	buffer.insert(buffer.begin(), h_xyzBuffer.begin(),h_xyzBuffer.end());
+	//std::vector<Vec3i> buffer;	
+	//buffer.insert(buffer.begin(), h_xyzBuffer.begin(),h_xyzBuffer.end());
+
 	//for(int i = 0; i < h_xyzBuffer.size(); ++i) {
 	//	Vec3i p(
 	//}
@@ -39,8 +40,7 @@ int main(void)
 	
 	
 
-	CPUOctree octree(9,buffer);
-	//TerminateViewer();
+	TerminateViewer();
 	
 	return 0;
 }

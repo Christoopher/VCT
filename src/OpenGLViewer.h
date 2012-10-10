@@ -63,6 +63,8 @@ GLuint VBO;
 
 Shader shader;
 Shader fragListShader;
+Shader voxelShader;
+
 
 //OpenGLTools
 GLFrame cameraFrame;
@@ -82,7 +84,10 @@ int XYZ_BUFFER_SIZE = XYZ_VALUES*sizeof(float);
 //xyzBuffer global memory addresses
 GLuint64EXT xyzBufferGPUAddress=0;
 
+CPUOctree octree;
 
+bool changed = true;
+int currLevel = 2;
 
 //Full grid Tex3D
 GLuint volumeTexture;
@@ -232,14 +237,21 @@ resetCounter()
 void
 readFragmentList()
 {
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, acBuffer);
+	GLuint * acValue = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
+												 GL_MAP_READ_BIT);
+	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
 	//Read fragmentlist
 	glBindBuffer(GL_ARRAY_BUFFER, xyzBuffer);
 	GLfloat * d_xyzBufferPtr = (GLfloat*)glMapBufferRange(GL_ARRAY_BUFFER, 0, XYZ_BUFFER_SIZE,
 												GL_MAP_READ_BIT);
 	getOpenGLError();											
 	
-	h_xyzBuffer.resize(XYZ_VALUES/3);
-	memcpy(&h_xyzBuffer[0], d_xyzBufferPtr,XYZ_BUFFER_SIZE);
+	h_xyzBuffer.resize(*acValue);
+	memcpy(&h_xyzBuffer[0], d_xyzBufferPtr,*acValue*3*sizeof(float));
 	
 	getOpenGLError();
 	
@@ -261,6 +273,15 @@ readFragmentList()
 void
 voxelize()
 {
+	
+	//glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	//glCullFace(GL_FRONT);
+
+	glClearColor(0.0f,0.0f,0.0f,1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 
 	glViewport(0,0,GRIDDIM, GRIDDIM);
 
@@ -291,13 +312,9 @@ voxelize()
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,0,acBuffer);
 	getOpenGLError();
 	
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	
 	DrawModel(model);
 
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);	
+	
 
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,0,0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -324,8 +341,11 @@ drawQuad()
 	glBindImageTexture(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
 	glUniform1i(glGetUniformLocation(shader(),"gridTex"),0);
 
+	modelViewMatrix.PushMatrix();
 	modelViewMatrix.LoadIdentity();
+	projectionMatrix.PushMatrix();
 	projectionMatrix.LoadIdentity();
+
 	glUniformMatrix4fv(shader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
 	glUniformMatrix4fv(shader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetProjectionMatrix() );		
 
@@ -338,6 +358,34 @@ drawQuad()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);	
 }
 
+void
+drawOctree()
+{
+	
+	glClearColor(0.0f,0.0f,0.0f,1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	std::vector<Voxel>& voxel = octree.getVoxels();
+	voxelShader.use();
+
+	glUniformMatrix4fv(voxelShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetProjectionMatrix() );
+	glUniformMatrix4fv(voxelShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
+	glutWireCube(20);
+	
+	for(int i = 0; i < voxel.size();++i) {
+		modelViewMatrix.PushMatrix();
+		float s = voxel[i].scale*0.5;
+		modelViewMatrix.Translate(voxel[i].pos(0)-10+s,voxel[i].pos(1)-10+s,voxel[i].pos(2)-10+s);
+		glUniformMatrix4fv(voxelShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetProjectionMatrix() );
+		glUniformMatrix4fv(voxelShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
+		
+
+		glutWireCube(voxel[i].scale);
+
+		modelViewMatrix.PopMatrix();
+		
+	}
+	
+}
 //----------------------------------------------------------------------------//
 // Draws all content
 //----------------------------------------------------------------------------//
@@ -369,25 +417,68 @@ void OpenGl_drawAndUpdate(bool &running)
 	//Clear the buffer color and depth
 	
 
-	
+
 	if(first) {
+		
 		glClearColor(0.0f,0.0f,0.0f,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RGBA, GL_FLOAT,buffer);
 		voxelize();
 		first = false;
 		glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+
+		std::vector<Vec3i> buffer;	
+		buffer.insert(buffer.begin(), h_xyzBuffer.begin(),h_xyzBuffer.end());
+
+		float max = -100000;
+		for(int i = 0; i < h_xyzBuffer.size(); ++i) {
+			if(h_xyzBuffer[i](0) > max)
+				max = h_xyzBuffer[i](0);
+		}
+		
+//		std::vector<Vec3i> buffer;
+		
+		/*
+		buffer.push_back(Vec3i(0,0,0));
+		buffer.push_back(Vec3i(3,0,0));
+		buffer.push_back(Vec3i(0,3,0));
+		buffer.push_back(Vec3i(3,3,0));
+		buffer.push_back(Vec3i(0,0,3));
+		buffer.push_back(Vec3i(3,0,3));
+		buffer.push_back(Vec3i(0,3,3));
+		buffer.push_back(Vec3i(3,3,3));
+		*/
+		/*
+		buffer.push_back(Vec3i(0,0,0));
+		buffer.push_back(Vec3i(511,0,0));
+		buffer.push_back(Vec3i(0,511,0));
+		buffer.push_back(Vec3i(511,511,0));
+		buffer.push_back(Vec3i(0,0,511));
+		buffer.push_back(Vec3i(511,0,511));
+		buffer.push_back(Vec3i(0,511,511));
+		buffer.push_back(Vec3i(511,511,511));
+		*/
+		octree.buildTree(9,buffer);
+		
+		first = false;
 	}
-	
+
+	if(changed) {
+		octree.buildVoxel(currLevel,20);		
+		changed = false;
+	}
+
 	
 	
 	glClearColor(0.0f,0.0f,0.0f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//Draw full screen quad ad ray trace the volume
 	
-	drawQuad();
-
+	//drawQuad();
+	drawOctree();
+	
 	glfwSwapBuffers();
+	//Pop camera matrix
 	modelViewMatrix.PopMatrix();
 	glGetError();
 }
@@ -397,6 +488,13 @@ void OpenGl_drawAndUpdate(bool &running)
 void
 initShader()
 {	
+	voxelShader.addShader("../../src/Shaders/voxelShader.vert",Shader::VERTEX_SHADER);
+	voxelShader.addShader("../../src/Shaders/voxelShader.frag", Shader::FRAGMENT_SHADER);
+	voxelShader.addUniform("modelViewMatrix");
+	voxelShader.addUniform("projectionMatrix");
+	voxelShader.compile();
+	getOpenGLError();
+
 	shader.addShader("../../src/Shaders/shader.vert", Shader::VERTEX_SHADER);
 	shader.addShader("../../src/Shaders/shader.frag", Shader::FRAGMENT_SHADER);
 	shader.addAttribute("vertex");
@@ -527,6 +625,21 @@ initBuffers()
 void GLFWCALL KeyboardFunc( int key, int action )
 {
 
+	if(key == 'K' && action == GLFW_PRESS) //Cam reset
+	{
+		if(currLevel > 1)
+			--currLevel;
+		changed = true;
+	}
+
+	if(key == 'L' && action == GLFW_PRESS) //Cam reset
+	{
+		if(currLevel<9)
+		++currLevel;
+		changed = true;
+	}
+
+
 	if(key == 'C' && action == GLFW_PRESS) //Cam reset
 	{
 		rotDy = 0;
@@ -628,11 +741,11 @@ void OpenGl_initViewer(int width_, int height_)
 	//glShadeModel(GL_SMOOTH);
 
 	//Move the camera back 5 units
-	cameraFrame.SetOrigin(0.0f,0.0f,0.0);
+	cameraFrame.SetOrigin(0.0f,0.0f,5.0);
 	transformPipeline.SetMatrixStacks(modelViewMatrix,projectionMatrix);
 
 
-
+	
 	
 	initShader();
 
