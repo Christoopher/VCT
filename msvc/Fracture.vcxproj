@@ -114,6 +114,8 @@
     <None Include="..\src\Shaders\buildFragList.frag" />
     <None Include="..\src\Shaders\buildFragList.geom" />
     <None Include="..\src\Shaders\buildFragList.vert" />
+    <None Include="..\src\Shaders\phongShader.frag" />
+    <None Include="..\src\Shaders\phongShader.vert" />
     <None Include="..\src\Shaders\shader.frag" />
     <None Include="..\src\Shaders\shader.vert" />
     <None Include="..\src\Shaders\voxelShader.frag" />

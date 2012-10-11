@@ -55,6 +55,7 @@ unpack(float val)
 
 void main(void)
 {
+
 	vec2 pos = f_xyz.xy / f_xyz.w;
 	if( pos.x < f_AABB.x || pos.y < f_AABB.y ||
 		pos.x > f_AABB.z || pos.y > f_AABB.w)
@@ -88,7 +89,7 @@ void main(void)
 	d_xyzBuffer[counter*3] = float(ijk.x);
 	d_xyzBuffer[counter*3+1] = float(ijk.y);
 	d_xyzBuffer[counter*3+2] = float(ijk.z);
-	imageStore(gridTex, ijk, vec4(1.0));
+	//imageStore(gridTex, ijk, vec4(1.0));
 	//imageStore(gridTex, ijkMin, vec4(ijkMin,1.0));
 	//imageStore(gridTex, ijkMax, vec4(ijkMax,1.0));
 

@@ -58,13 +58,14 @@ int frames = 0;
 bool running = true;
 
 Model * model;
+Model * modelPhong;
 
 GLuint VBO;
 
 Shader shader;
 Shader fragListShader;
 Shader voxelShader;
-
+Shader phongShader;
 
 //OpenGLTools
 GLFrame cameraFrame;
@@ -94,7 +95,7 @@ GLuint volumeTexture;
 
 //Scene bounding volume
 float MINX = -10, MAXX = 10, MINY = -10, MAXY = 10, MINZ = -10, MAXZ = 10;
-int GRIDDIM = 256;
+int GRIDDIM = 512;
 
 GLfloat * buffer;
 
@@ -274,8 +275,8 @@ void
 voxelize()
 {
 	
-	//glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+
+	
 
 	//glCullFace(GL_FRONT);
 
@@ -291,10 +292,10 @@ voxelize()
 	
 	resetCounter();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,volumeTexture);
-	glBindImageTextureEXT(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
-	glUniform1i(glGetUniformLocation(fragListShader(),"gridTex"),0);	
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_3D,volumeTexture);
+	//glBindImageTextureEXT(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
+	//glUniform1i(glGetUniformLocation(fragListShader(),"gridTex"),0);	
 
 	GLfloat ortho[16] =  { 1,0,0,0,  0,1,0,0, 0,0,1,0, 0,0,0,1 };
 
@@ -312,9 +313,14 @@ voxelize()
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,0,acBuffer);
 	getOpenGLError();
 	
+	glDisable(GL_CULL_FACE);	
+	glDisable(GL_DEPTH_TEST);
+	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
 	DrawModel(model);
 
-	
+	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+	glEnable(GL_CULL_FACE);	
+	glEnable(GL_DEPTH_TEST);
 
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,0,0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -386,6 +392,7 @@ drawOctree()
 	}
 	
 }
+
 //----------------------------------------------------------------------------//
 // Draws all content
 //----------------------------------------------------------------------------//
@@ -416,13 +423,13 @@ void OpenGl_drawAndUpdate(bool &running)
 
 	//Clear the buffer color and depth
 	
-
-
+	
+	
 	if(first) {
 		
 		glClearColor(0.0f,0.0f,0.0f,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RGBA, GL_FLOAT,buffer);
+		//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RGBA, GL_FLOAT,buffer);
 		voxelize();
 		first = false;
 		glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
@@ -435,29 +442,6 @@ void OpenGl_drawAndUpdate(bool &running)
 			if(h_xyzBuffer[i](0) > max)
 				max = h_xyzBuffer[i](0);
 		}
-		
-//		std::vector<Vec3i> buffer;
-		
-		/*
-		buffer.push_back(Vec3i(0,0,0));
-		buffer.push_back(Vec3i(3,0,0));
-		buffer.push_back(Vec3i(0,3,0));
-		buffer.push_back(Vec3i(3,3,0));
-		buffer.push_back(Vec3i(0,0,3));
-		buffer.push_back(Vec3i(3,0,3));
-		buffer.push_back(Vec3i(0,3,3));
-		buffer.push_back(Vec3i(3,3,3));
-		*/
-		/*
-		buffer.push_back(Vec3i(0,0,0));
-		buffer.push_back(Vec3i(511,0,0));
-		buffer.push_back(Vec3i(0,511,0));
-		buffer.push_back(Vec3i(511,511,0));
-		buffer.push_back(Vec3i(0,0,511));
-		buffer.push_back(Vec3i(511,0,511));
-		buffer.push_back(Vec3i(0,511,511));
-		buffer.push_back(Vec3i(511,511,511));
-		*/
 		octree.buildTree(9,buffer);
 		
 		first = false;
@@ -467,15 +451,34 @@ void OpenGl_drawAndUpdate(bool &running)
 		octree.buildVoxel(currLevel,20);		
 		changed = false;
 	}
-
+	
+	//drawQuad();
+	
 	
 	
 	glClearColor(0.0f,0.0f,0.0f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//Draw full screen quad ad ray trace the volume
 	
-	//drawQuad();
+	glEnable(GL_CULL_FACE);	
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);	
+
 	drawOctree();
+	
+	phongShader.use();
+	glUniformMatrix4fv(phongShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix() );
+	glUniformMatrix4fv(phongShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
+	const M3DMatrix33f & norm = transformPipeline.GetNormalMatrix();
+	glUniformMatrix3fv(phongShader.getUniform("normalMatrix"), 1, GL_FALSE, transformPipeline.GetNormalMatrix() );
+
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINTS);	
+	
+	DrawModel(modelPhong);
+	
+	
 	
 	glfwSwapBuffers();
 	//Pop camera matrix
@@ -488,6 +491,18 @@ void OpenGl_drawAndUpdate(bool &running)
 void
 initShader()
 {	
+
+	phongShader.addShader("../../src/Shaders/phongShader.vert",Shader::VERTEX_SHADER);
+	phongShader.addShader("../../src/Shaders/phongShader.frag",Shader::FRAGMENT_SHADER);
+	phongShader.addUniform("modelViewMatrix");
+	phongShader.addUniform("projectionMatrix");
+	phongShader.addUniform("normalMatrix");
+	phongShader.addAttribute("vertex");
+	phongShader.addAttribute("normal");
+	phongShader.addAttribute("texCoords");
+	phongShader.compile();
+	getOpenGLError();
+
 	voxelShader.addShader("../../src/Shaders/voxelShader.vert",Shader::VERTEX_SHADER);
 	voxelShader.addShader("../../src/Shaders/voxelShader.frag", Shader::FRAGMENT_SHADER);
 	voxelShader.addUniform("modelViewMatrix");
@@ -548,7 +563,7 @@ void initTextures()
 	getOpenGLError();
 	
 	buffer = new GLfloat[GRIDDIM*GRIDDIM*GRIDDIM*4];
-	int center = 128;
+	int center = 256;
 	for(int k = 0; k < GRIDDIM; ++k) {
 		for(int j = 0; j < GRIDDIM; ++j) {
 			for(int i = 0; i < GRIDDIM; ++i) {
@@ -614,6 +629,10 @@ initBuffers()
 //C:\Users\Teneo\Documents\Visual Studio 2010\Projects\VCT\models\teapot.obj
 	model = LoadModel("..\\..\\models\\teapot.obj");
 	BuildModelVAO(model, fragListShader(), "vertex", "normal", "texCoords");
+	glBindVertexArray(0);
+
+	modelPhong = LoadModel("..\\..\\models\\teapot.obj");
+	BuildModelVAO(modelPhong, phongShader(), "vertex", "normal", "texCoords");
 	glBindVertexArray(0);
 	getOpenGLError();
 }
@@ -752,7 +771,7 @@ void OpenGl_initViewer(int width_, int height_)
 	//Must be done after shader init
 	initBuffers();
 
-	initTextures();
+	//initTextures();
 }
 
 

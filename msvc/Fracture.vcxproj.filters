@@ -79,5 +79,11 @@
     <None Include="..\src\Shaders\voxelShader.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\src\Shaders\phongShader.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\src\Shaders\phongShader.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

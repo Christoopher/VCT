@@ -14,7 +14,7 @@
 int main(void)
 {
 	
-	OpenGl_initViewer(256, 256);
+	OpenGl_initViewer(512, 512);
 		
 	while(running) {
 			
