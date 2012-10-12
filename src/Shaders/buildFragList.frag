@@ -61,8 +61,11 @@ void main(void)
 		pos.x > f_AABB.z || pos.y > f_AABB.w)
 		discard;
 	
-	
-	ivec3 ijk = ivec3(gl_FragCoord.xy,gl_FragCoord.z*gridDim);
+	ivec3 ijk;
+	if(f_axis == 2)
+		ijk = ivec3(gl_FragCoord.xy,gridDim - gl_FragCoord.z*gridDim);
+	else
+		ijk = ivec3(gl_FragCoord.xy,gl_FragCoord.z*gridDim);
 	
 	float dz = 0.5*fwidth(gl_FragCoord.z);
 	ivec3 ijkMin = ivec3(gl_FragCoord.xy,(gl_FragCoord.z - dz)*gridDim);

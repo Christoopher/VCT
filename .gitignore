@@ -28,6 +28,7 @@ xcuserdata
 *.unsuccessfulbuild
 ipch/
 obj/
+models/
 [Bb]in
 [Dd]ebug*/
 [Rr]elease*/

@@ -78,6 +78,7 @@ void main()
 					0.0f,1.0f,0.0f,0.0f,
 					0.0f,0.0f,1.0f,0.0f,
 					0.0f,0.0f,0.0f,1.0f);
+
 	f_color = vec3(1.0f,0.0f,0.0f);
 	if(axis == 0) {
 		rot = rot2X;

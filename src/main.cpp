@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <iostream>
 
-
 #include "OpenGLViewer.h"
 
 #define LOW10 0x3FF

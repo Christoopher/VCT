@@ -28,6 +28,7 @@
 #include "Shader.h"
 #include "loadobj.h"
 #include "CPUOctree.h"
+#include "ObjModel.h"
 //----------------------------------------------------------------------------//
 // Variables declaration
 //----------------------------------------------------------------------------//
@@ -59,8 +60,12 @@ bool running = true;
 
 Model * model;
 Model * modelPhong;
+ObjModel objModel;
 
 GLuint VBO;
+
+//Wireframe vbos
+GLuint wf_vbo, wf_scale;
 
 Shader shader;
 Shader fragListShader;
@@ -80,7 +85,7 @@ GLuint acBuffer;
 //xyz buffer
 GLuint xyzBuffer; //gpu
 std::vector<Vec3f> h_xyzBuffer; //cpu
-int XYZ_VALUES = 1000000*3;
+int XYZ_VALUES = 70000000*3;
 int XYZ_BUFFER_SIZE = XYZ_VALUES*sizeof(float);
 //xyzBuffer global memory addresses
 GLuint64EXT xyzBufferGPUAddress=0;
@@ -135,6 +140,21 @@ GLuint quadUnitCubeIndices[] = {
 //back face
 	4,7,6,5
 };
+
+
+//----------------------------------------------------------------------------//
+// Unit wireframe cube: vertices,normals & indices
+//----------------------------------------------------------------------------//
+GLfloat wireframeUnitCubeVertices[] = 
+{ 
+	-0.5,0.5,-0.5,  -0.5,0.5,0.5,  0.5,0.5,0.5,  0.5,0.5,-0.5f,
+	-0.5,-0.5,-0.5,  -0.5,-0.5,0.5,	0.5,-0.5,0.5, 0.5,-0.5,-0.5
+};
+
+
+//GLuint wireframeUnitcubeindices[] = { 0,1, 1,2, 2,3, 0,3, 0,4, 4,7, 7,3, 6,7, 2,6, 5,6, 1,5, 4,5 };
+
+GLuint wireframeUnitcubeindices[] = { 0,1,2,3,4,5,6,7 };
 
 
 
@@ -274,19 +294,11 @@ readFragmentList()
 void
 voxelize()
 {
-	
-
-	
-
-	//glCullFace(GL_FRONT);
-
 	glClearColor(0.0f,0.0f,0.0f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-
 	glViewport(0,0,GRIDDIM, GRIDDIM);
 
-	//glUseProgram(shader);	
 	fragListShader.use();
 	getOpenGLError();
 	
@@ -307,6 +319,9 @@ voxelize()
 	ortho[14] = -((MAXZ + MINZ)/(MAXZ - MINZ));
 	ortho[15] = 1.0f;
 
+	modelViewMatrix.PushMatrix();
+	modelViewMatrix.LoadIdentity();
+	modelViewMatrix.Scale(0.005,0.005,0.005);
 	glUniformMatrix4fv(fragListShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix());
 	glUniformMatrix4fv(fragListShader.getUniform("projectionMatrix"), 1, GL_FALSE, ortho);	
 
@@ -317,6 +332,8 @@ voxelize()
 	glDisable(GL_DEPTH_TEST);
 	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
 	DrawModel(model);
+
+	modelViewMatrix.PopMatrix();
 
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glEnable(GL_CULL_FACE);	
@@ -370,13 +387,36 @@ drawOctree()
 	
 	glClearColor(0.0f,0.0f,0.0f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	std::vector<Voxel>& voxel = octree.getVoxels();
+	Voxels & voxels= octree.getVoxels();
+	
 	voxelShader.use();
+
+	
+	
+	//instanced positions
+
+
+	glBindBuffer(GL_ARRAY_BUFFER,wf_vbo);
+	glBufferData(GL_ARRAY_BUFFER,voxels.pos.size()*3*sizeof(float),&voxels.pos[0],GL_STATIC_DRAW);
+	glEnableVertexAttribArray(voxelShader.getAttrib("vertex"));
+	glVertexAttribPointer(voxelShader.getAttrib("vertex"),3,GL_FLOAT,GL_FALSE,0,0);	
 
 	glUniformMatrix4fv(voxelShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetProjectionMatrix() );
 	glUniformMatrix4fv(voxelShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
-	glutWireCube(20);
-	
+	int connectivity[16] = {5,1,2,6, 1,0,3,2, 0,4,7,3, 4,5,6,7};
+	glUniform4iv(voxelShader.getUniform("connectivity"), 4, connectivity );
+	glUniform1f(voxelShader.getUniform("scale"),voxels.scale);
+	GLfloat corners[] = 
+	{ 
+		-0.5,0.5,0.5, -0.5,-0.5,0.5, 0.5,-0.5,0.5, 0.5,0.5,0.5,
+		-0.5,0.5,-0.5, -0.5,-0.5,-0.5, 0.5,-0.5,-0.5, 0.5,0.5,-0.5
+	};
+	glUniform3fv(voxelShader.getUniform("corners"), 8, corners );
+	getOpenGLError();
+	//glDrawElements(GL_POINTS, 8, GL_UNSIGNED_INT,0);
+	glDrawArrays(GL_POINTS,0,voxels.pos.size());
+
+	/*
 	for(int i = 0; i < voxel.size();++i) {
 		modelViewMatrix.PushMatrix();
 		float s = voxel[i].scale*0.5;
@@ -389,7 +429,7 @@ drawOctree()
 
 		modelViewMatrix.PopMatrix();
 		
-	}
+	}*/
 	
 }
 
@@ -434,15 +474,18 @@ void OpenGl_drawAndUpdate(bool &running)
 		first = false;
 		glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
-		std::vector<Vec3i> buffer;	
-		buffer.insert(buffer.begin(), h_xyzBuffer.begin(),h_xyzBuffer.end());
+		//while(h_xyzBuffer.size() > 0) {
+		//	fragBuffer.push_back(h_xyzBuffer.back());
+		//	h_xyzBuffer.pop_back();
+		//}
+		//buffer.insert(buffer.begin(), h_xyzBuffer.begin(),h_xyzBuffer.end());
 
 		float max = -100000;
 		for(int i = 0; i < h_xyzBuffer.size(); ++i) {
 			if(h_xyzBuffer[i](0) > max)
 				max = h_xyzBuffer[i](0);
 		}
-		octree.buildTree(9,buffer);
+		octree.buildTree(9,h_xyzBuffer);
 		
 		first = false;
 	}
@@ -465,20 +508,29 @@ void OpenGl_drawAndUpdate(bool &running)
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);	
 
+
+	
 	drawOctree();
+	
+	
+	phongShader.use();
+	modelViewMatrix.PushMatrix();
+	modelViewMatrix.Scale(0.005,0.005,0.005);
+	glUniformMatrix4fv(phongShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix() );
+	glUniformMatrix4fv(phongShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
+	glUniformMatrix3fv(phongShader.getUniform("normalMatrix"), 1, GL_FALSE, transformPipeline.GetNormalMatrix() );
+	DrawModel(modelPhong);
+	
+	modelViewMatrix.PopMatrix();
+	
+	/*
 	
 	phongShader.use();
 	glUniformMatrix4fv(phongShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix() );
 	glUniformMatrix4fv(phongShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
-	const M3DMatrix33f & norm = transformPipeline.GetNormalMatrix();
 	glUniformMatrix3fv(phongShader.getUniform("normalMatrix"), 1, GL_FALSE, transformPipeline.GetNormalMatrix() );
-
-
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINTS);	
-	
-	DrawModel(modelPhong);
-	
-	
+	objModel.drawModel(phongShader(),"vertex", "normal");
+	*/
 	
 	glfwSwapBuffers();
 	//Pop camera matrix
@@ -505,8 +557,13 @@ initShader()
 
 	voxelShader.addShader("../../src/Shaders/voxelShader.vert",Shader::VERTEX_SHADER);
 	voxelShader.addShader("../../src/Shaders/voxelShader.frag", Shader::FRAGMENT_SHADER);
+	voxelShader.addShader("../../src/Shaders/voxelShader.geom", Shader::GEOMETRY_SHADER);
 	voxelShader.addUniform("modelViewMatrix");
 	voxelShader.addUniform("projectionMatrix");
+	voxelShader.addUniform("connectivity");
+	voxelShader.addUniform("corners");
+	voxelShader.addUniform("scale");
+	voxelShader.addAttribute("vertex");
 	voxelShader.compile();
 	getOpenGLError();
 
@@ -625,15 +682,34 @@ initBuffers()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	getOpenGLError();	
 
+	//Wireframe box vbo
+	glGenBuffers(1,&wf_vbo);
+	glGenBuffers(1,&wf_scale);
+	
+	
+	//glVertexAttribPointer(wf_vertexLocation,4,GL_FLOAT,GL_FALSE,0,0);
+	//glEnableVertexAttribArray(wf_vertexLocation);
+
 	//Load model
 //C:\Users\Teneo\Documents\Visual Studio 2010\Projects\VCT\models\teapot.obj
-	model = LoadModel("..\\..\\models\\teapot.obj");
+	//model = LoadModel("..\\..\\models\\teapot.obj");	
+	model = LoadModel("..\\..\\models\\blender.obj");
+	//model = LoadModel("..\\..\\models\\head\\head.obj");	
+	//model = LoadModel("..\\..\\models\\dabsponza\\sponza.obj");	
 	BuildModelVAO(model, fragListShader(), "vertex", "normal", "texCoords");
 	glBindVertexArray(0);
 
-	modelPhong = LoadModel("..\\..\\models\\teapot.obj");
+	//modelPhong = LoadModel("..\\..\\models\\head\\head.obj");
+	modelPhong = LoadModel("..\\..\\models\\blender.obj");
+	//modelPhong = LoadModel("..\\..\\models\\teapot.obj");
+	//modelPhong = LoadModel("..\\..\\models\\dabsponza\\sponza.obj");	
 	BuildModelVAO(modelPhong, phongShader(), "vertex", "normal", "texCoords");
 	glBindVertexArray(0);
+
+	
+	//objModel.loadModel("..\\..\\models\\teapot.obj");
+	//objModel.loadModel("..\\..\\models\\head\\head.obj");
+
 	getOpenGLError();
 }
 

@@ -19,5 +19,5 @@ void main(void)
 	g_normal = normal;
 	g_texCoord = texCoord;
 	//gl_Position = projectionMatrix * modelViewMatrix * vec4(vertex, 1.0);
-	gl_Position = vec4(vertex, 1.0);
+	gl_Position = modelViewMatrix*vec4(vertex, 1.0);
 }

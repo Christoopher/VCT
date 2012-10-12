@@ -19,6 +19,12 @@
     <Filter Include="Header Files\Timer">
       <UniqueIdentifier>{75d9ba8d-46d4-4735-9c62-e2fce703c9e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ObjLoader">
+      <UniqueIdentifier>{e9dc9927-cb3f-41e6-bb6f-711844372ffa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ObjLoader">
+      <UniqueIdentifier>{23e7b43c-15dc-4f75-96e4-ff5e95fd48d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -32,6 +38,12 @@
     </ClCompile>
     <ClCompile Include="..\src\loadobj.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ObjModel.cpp">
+      <Filter>Source Files\ObjLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ObjLoader.cpp">
+      <Filter>Source Files\ObjLoader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="..\src\Vector.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ObjModel.h">
+      <Filter>Header Files\ObjLoader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +98,9 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\src\Shaders\phongShader.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\src\Shaders\voxelShader.geom">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

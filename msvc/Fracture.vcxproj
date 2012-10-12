@@ -91,6 +91,8 @@
   <ItemGroup>
     <ClCompile Include="..\src\loadobj.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\ObjLoader.cpp" />
+    <ClCompile Include="..\src\ObjModel.cpp" />
     <ClCompile Include="..\src\OpenGLRelated\include\GLTools\src\math3d.cpp" />
     <ClCompile Include="..\src\Timing\hr_time.cpp" />
   </ItemGroup>
@@ -105,6 +107,7 @@
     <ClInclude Include="..\src\CPUOctree.h" />
     <ClInclude Include="..\src\loadobj.h" />
     <ClInclude Include="..\src\ObjLoader.h" />
+    <ClInclude Include="..\src\ObjModel.h" />
     <ClInclude Include="..\src\OpenGLViewer.h" />
     <ClInclude Include="..\src\Shader.h" />
     <ClInclude Include="..\src\Timing\hr_time.h" />
@@ -119,6 +122,7 @@
     <None Include="..\src\Shaders\shader.frag" />
     <None Include="..\src\Shaders\shader.vert" />
     <None Include="..\src\Shaders\voxelShader.frag" />
+    <None Include="..\src\Shaders\voxelShader.geom" />
     <None Include="..\src\Shaders\voxelShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

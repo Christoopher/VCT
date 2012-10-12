@@ -18,8 +18,14 @@ public:
 class Node
 {
 public:
-	Node() : divide(false)
+	Node() : nodeTile(0), divide(false)
 	{				
+	}
+
+	~Node()
+	{
+		if(nodeTile != 0)
+			delete nodeTile;
 	}
 
 	NodeTile * nodeTile;	
@@ -37,7 +43,9 @@ NodeTile::NodeTile()
 
 NodeTile::~NodeTile()
 {
-	//delete [] nodes;
+	for(int i = 0; i < 8; ++i)
+		if(nodes[i] != 0)
+			delete nodes[i];
 }
 
 void NodeTile::initNodes()
@@ -46,11 +54,16 @@ void NodeTile::initNodes()
 		nodes[i] = new Node();
 }
 
-struct Voxel
+struct Voxels
 {
-	Voxel(Vec3f p, float scale) : pos(p), scale(scale)
-	{}
-	Vec3f pos;
+
+	void clear()
+	{
+		pos.clear();
+		scale = 1.0;
+	}
+
+	std::vector<Vec3f> pos;
 	float scale;
 };
 
@@ -60,14 +73,14 @@ public:
 
 	CPUOctree() 
 	{
-	
+
 	}
 
 
 	void
-	buildTree(int levels, std::vector<Vec3i> & fragList)
+		buildTree(int levels, std::vector<Vec3f> & fragList)
 	{
-		
+
 		LEVELS = levels;
 		_fragList = &fragList;
 		rootTile = new NodeTile();
@@ -92,22 +105,24 @@ public:
 		}
 	}
 
-	std::vector<Voxel> &
-	getVoxels()
+	Voxels &
+		getVoxels()
 	{
 		return _voxels;
 	}
 
 	void
-	buildVoxel(int level, float dim)
+		buildVoxel(int level, float dim)
 	{
 		_voxels.clear();
 		int currentLevel =1;
 		NodeTile* nodeTile = rootTile->nodes[0]->nodeTile;
 		Vec3f xi(0.0,0.0,0.0);
 		_dim = dim;
+		float scale = _dim/pow(2.0f,level);
+		_voxels.scale = scale;
 		//create VectorTable
-		
+
 		vectorTable.push_back(Vec3f(0,0,0));
 		vectorTable.push_back(Vec3f(1,0,0));
 		vectorTable.push_back(Vec3f(0,1,0));
@@ -118,14 +133,14 @@ public:
 		vectorTable.push_back(Vec3f(1,1,1));	
 
 		recursiveTravel(nodeTile,currentLevel, level, xi); 
-		
-		
+
+
 	}
 
 
 
 private:
-	std::vector<Vec3i> * _fragList;
+	std::vector<Vec3f> * _fragList;
 	NodeTile * rootTile;
 	std::vector<NodeTile *> _nodePool;
 	int LEVELS;
@@ -133,10 +148,10 @@ private:
 	std::vector<Vec3f> vectorTable;
 	float _dim;
 	//For drawing
-	std::vector<Voxel> _voxels;
+	Voxels _voxels;
 
 
-//------------------------------------------------------------------------------
+	//------------------------------------------------------------------------------
 
 	void recursiveTravel(NodeTile* nodeTile, int currentLevel, int finalLevel, Vec3f xi)
 	{
@@ -148,8 +163,7 @@ private:
 				Vec3f xiTemp = xi + vectorTable[i]*scale;
 				if(currentLevel == finalLevel)
 				{
-					Voxel v(xiTemp,scale);
-					_voxels.push_back(v);
+					_voxels.pos.push_back(xiTemp);
 				}
 				else
 				{
@@ -161,7 +175,7 @@ private:
 	}
 	void _flagNodes(int level)
 	{
-		
+
 		//Always start at root
 
 		for(int j = 0; j < _fragList->size(); ++j) {
@@ -175,7 +189,7 @@ private:
 				node = nodeTile->nodes[_idx((*_fragList)[j],i)];
 				++i;
 			} while(i <= level);
-			
+
 			node->divide = true;
 		}
 	}
@@ -195,15 +209,15 @@ private:
 					nodes[n]->nodeTile->initNodes(); //This will be a step int the gpu impl.
 					_nodePool.push_back(nodes[n]->nodeTile);
 				}
-					
+
 			}
-			
+
 		}
 	}
 
 	//Return the coorect tile index given a position and a level
 	int 
-	_idx(const Vec3i & p, int level)
+		_idx(const Vec3i & p, int level)
 	{
 		//floor(x/2^(LEVELS-levels)) - floor(x/2^(LEVELS-levels+1)) :D D::D:D:D:D:D
 		int shift = LEVELS-level; //
