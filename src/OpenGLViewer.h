@@ -50,6 +50,27 @@ void int_bin(int i)
 	std::cout << binary << std::endl;    
 }
 
+int floatBitsToInt(float const & value)
+{
+	union
+	{
+		float f;
+		int i;
+	} fi;
+
+	fi.f = value;
+	return fi.i;
+}
+#define LOW10 0x3FF
+#define MID10 0xFFC00
+#define HIGH10 0x3FF00000
+Vec3f
+unpack(float val)
+{
+	int ival = floatBitsToInt(val);
+	return Vec3f( (ival & HIGH10) >> 20, (ival & MID10) >> 10, ival & LOW10);
+}
+
 //Window properties and GUI-related
 int winw, winh;
 int lastmousex, lastmousey, lastwheelpos;
@@ -57,6 +78,8 @@ float posDx = 0.0f, posDy = 0.0f, zoom = 0.0f, rotDx = 0.0f, rotDy = 0.0f;
 double t0 = 0;
 int frames = 0;
 bool running = true;
+
+bool left = false, right = false, forward = false, back = false;
 
 Model * model;
 Model * modelPhong;
@@ -278,7 +301,7 @@ readFragmentList()
 	
 	for(int i = 0;i<10;++i)
 	{
-		std::cout << h_xyzBuffer[i] << ", ";
+		std::cout << unpack(h_xyzBuffer[i](0)) << ", ";
 	}
 	std::cout << std::endl;	
 
@@ -397,7 +420,7 @@ drawOctree()
 
 
 	glBindBuffer(GL_ARRAY_BUFFER,wf_vbo);
-	glBufferData(GL_ARRAY_BUFFER,voxels.pos.size()*3*sizeof(float),&voxels.pos[0],GL_STATIC_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER,voxels.pos.size()*3*sizeof(float),&voxels.pos[0],GL_STATIC_DRAW);
 	glEnableVertexAttribArray(voxelShader.getAttrib("vertex"));
 	glVertexAttribPointer(voxelShader.getAttrib("vertex"),3,GL_FLOAT,GL_FALSE,0,0);	
 
@@ -450,16 +473,41 @@ void OpenGl_drawAndUpdate(bool &running)
 
 	showFPS(winw, winh, zoom);
 	Resize(); //Update viewport and projection matrix
-
+	
+	/*if(forward) {
+		cameraFrame.MoveForward(0.5);
+	}
+	if(back) {
+		cameraFrame.MoveForward(-0.5);
+	}
+	if(left) {
+		cameraFrame.MoveRight(0.5);
+	}
+	if(right) {
+		cameraFrame.MoveRight(-0.5);
+	}
+	*/
 
 	//Camera Matrix
+	/*
+	M3DMatrix44f mCamera;
+	cameraFrame.GetCameraMatrix(mCamera);		
+	modelViewMatrix.PushMatrix(mCamera);
+	float x = cameraFrame.GetOriginX();
+	float y = cameraFrame.GetOriginY();
+	float z = cameraFrame.GetOriginZ();
+	modelViewMatrix.Translate(x,y,z);	
+	modelViewMatrix.Rotate(-rotDx,1.0f,0.0f,0.0f);
+	modelViewMatrix.Rotate(-rotDy,0.0f,1.0f,0.0f);
+	*/
+
 	M3DMatrix44f mCamera;
 	cameraFrame.GetCameraMatrix(mCamera);		
 	modelViewMatrix.PushMatrix(mCamera);
 	modelViewMatrix.Translate(posDx,posDy,zoom);
 	modelViewMatrix.Rotate(-rotDx,1.0f,0.0f,0.0f);
 	modelViewMatrix.Rotate(-rotDy,0.0f,1.0f,0.0f);	
-
+	
 
 	//Clear the buffer color and depth
 	
@@ -486,12 +534,16 @@ void OpenGl_drawAndUpdate(bool &running)
 				max = h_xyzBuffer[i](0);
 		}
 		octree.buildTree(9,h_xyzBuffer);
-		
+		h_xyzBuffer.clear();
 		first = false;
 	}
 
 	if(changed) {
-		octree.buildVoxel(currLevel,20);		
+		octree.buildVoxel(currLevel,20);	
+
+		glBindBuffer(GL_ARRAY_BUFFER,wf_vbo);
+		glBufferData(GL_ARRAY_BUFFER,octree.getVoxels().pos.size()*3*sizeof(float),&octree.getVoxels().pos[0],GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER,0);
 		changed = false;
 	}
 	
@@ -519,7 +571,8 @@ void OpenGl_drawAndUpdate(bool &running)
 	glUniformMatrix4fv(phongShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix() );
 	glUniformMatrix4fv(phongShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix() );
 	glUniformMatrix3fv(phongShader.getUniform("normalMatrix"), 1, GL_FALSE, transformPipeline.GetNormalMatrix() );
-	DrawModel(modelPhong);
+	
+	DrawModelProgram(model, phongShader(), "vertex", "normal");
 	
 	modelViewMatrix.PopMatrix();
 	
@@ -697,16 +750,14 @@ initBuffers()
 	//model = LoadModel("..\\..\\models\\head\\head.obj");	
 	//model = LoadModel("..\\..\\models\\dabsponza\\sponza.obj");	
 	BuildModelVAO(model, fragListShader(), "vertex", "normal", "texCoords");
-	glBindVertexArray(0);
 
 	//modelPhong = LoadModel("..\\..\\models\\head\\head.obj");
-	modelPhong = LoadModel("..\\..\\models\\blender.obj");
+	//modelPhong = LoadModel("..\\..\\models\\blender.obj");
 	//modelPhong = LoadModel("..\\..\\models\\teapot.obj");
 	//modelPhong = LoadModel("..\\..\\models\\dabsponza\\sponza.obj");	
-	BuildModelVAO(modelPhong, phongShader(), "vertex", "normal", "texCoords");
-	glBindVertexArray(0);
-
+	//BuildModelVAO(modelPhong, phongShader(), "vertex", "normal", "texCoords");
 	
+
 	//objModel.loadModel("..\\..\\models\\teapot.obj");
 	//objModel.loadModel("..\\..\\models\\head\\head.obj");
 
@@ -742,8 +793,34 @@ void GLFWCALL KeyboardFunc( int key, int action )
 		posDx = 0;
 		posDy = 0;
 		zoom = 0;
+		cameraFrame.SetOrigin(0.0f,0.0f,5.0);
+		cameraFrame.SetForwardVector(0,0,-1);
 
 	}
+
+	if(key == 'W')
+		if(action == GLFW_PRESS)
+			forward = true;
+		else
+			forward = false;
+
+	if(key == 'A')
+		if(action == GLFW_PRESS)
+			left = true;
+		else
+			left = false;
+
+	if(key == 'S')
+		if(action == GLFW_PRESS)
+			back = true;
+		else
+			back = false;
+
+	if(key == 'D')
+		if(action == GLFW_PRESS)
+			right = true;
+		else
+			right = false;
 
 	if(key == GLFW_KEY_ESC)
 	{
@@ -777,13 +854,20 @@ void GLFWCALL MousePosFunc( int x, int y )
 {
 	if(glfwGetKey(GLFW_KEY_LCTRL) == GLFW_PRESS && glfwGetMouseButton(GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
 	{
-		rotDy += (lastmousex - x) * 0.5;
-		rotDx += (lastmousey - y) * 0.5;
+		float rDx = (lastmousex - x) * 0.5;
+		float rDy = (lastmousey - y) * 0.5;
+		rotDy += rDx;
+		rotDx += rDy;
 	}
 	else if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
 	{
-		posDx -= (lastmousex - x) * 0.05;
-		posDy += (lastmousey - y) * 0.05;
+		float dx = (lastmousex - x) * 0.05;
+		float dy = (lastmousey - y) * 0.05;
+		posDx -= dx;
+		posDy += dy;
+
+		//cameraFrame.MoveRight(dx);
+		//cameraFrame.MoveUp(dy);
 	}
 	lastmousex = x;
 	lastmousey = y;

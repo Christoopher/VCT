@@ -94,6 +94,7 @@
     <ClCompile Include="..\src\ObjLoader.cpp" />
     <ClCompile Include="..\src\ObjModel.cpp" />
     <ClCompile Include="..\src\OpenGLRelated\include\GLTools\src\math3d.cpp" />
+    <ClCompile Include="..\src\quaternion.cpp" />
     <ClCompile Include="..\src\Timing\hr_time.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -104,11 +105,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\CPUOctree.h" />
     <ClInclude Include="..\src\loadobj.h" />
     <ClInclude Include="..\src\ObjLoader.h" />
     <ClInclude Include="..\src\ObjModel.h" />
     <ClInclude Include="..\src\OpenGLViewer.h" />
+    <ClInclude Include="..\src\quaternion.h" />
     <ClInclude Include="..\src\Shader.h" />
     <ClInclude Include="..\src\Timing\hr_time.h" />
     <ClInclude Include="..\src\Vector.h" />

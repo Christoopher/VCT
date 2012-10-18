@@ -859,6 +859,39 @@ void DrawModel(Model *m)
 
 }
 
+void DrawModelProgram(Model *m, 
+		  GLuint program,
+		  char* vertexVariableName,
+		  char* normalVariableName,
+		  char* texCoordVariableName)
+{
+	if (m != NULL)
+	{	
+		glUseProgram(program);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m->vb);
+		glVertexAttribPointer(glGetAttribLocation(program, vertexVariableName), 3, GL_FLOAT, GL_FALSE, 0, 0); 
+		glEnableVertexAttribArray(glGetAttribLocation(program, vertexVariableName));
+
+		if(normalVariableName != 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, m->nb);
+			glVertexAttribPointer(glGetAttribLocation(program, normalVariableName), 3, GL_FLOAT, GL_FALSE, 0, 0); 
+			glEnableVertexAttribArray(glGetAttribLocation(program, normalVariableName));
+		}
+
+		if(texCoordVariableName != 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, m->tb);
+			glVertexAttribPointer(glGetAttribLocation(program, texCoordVariableName), 2, GL_FLOAT, GL_FALSE, 0, 0); 
+			glEnableVertexAttribArray(glGetAttribLocation(program, texCoordVariableName));
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ib);
+
+		glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
+	}
+
+}
+
 void DrawWireframeModel(Model *m)
 {
 	if (m != NULL)
@@ -921,6 +954,8 @@ void BuildModelVAO(Model *m,
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ib);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m->numIndices*sizeof(GLuint), m->indexArray, GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
 }
 
 

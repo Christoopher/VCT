@@ -75,6 +75,11 @@ struct Vec3
 		return pos[i];
 	}
 
+	T * data()
+	{
+		return pos;
+	}
+
 	T pos[3];	
 };
 typedef Vec3<int> Vec3i;

@@ -15,6 +15,7 @@ public:
 	//Node ** nodes;
 	std::vector<Node*> nodes;
 };
+
 class Node
 {
 public:
@@ -103,6 +104,7 @@ public:
 			oldIndex = currIndex;
 			currIndex = _nodePool.size()-1;
 		}
+
 	}
 
 	Voxels &

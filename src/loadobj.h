@@ -32,6 +32,11 @@ Model* LoadModel(char* name);
 
 void DrawModel(Model *m);
 void DrawWireframeModel(Model *m);
+void DrawModelProgram(Model *m, 
+		  GLuint program,
+		  char* vertexVariableName,
+		  char* normalVariableName = 0,
+		  char* texCoordVariableName = 0);
 
 Model* LoadModelPlus(char* name,
 			GLuint program,

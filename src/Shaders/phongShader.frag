@@ -7,7 +7,7 @@ void main(void)
 
 	vFragColor = vec4(0.0f);
 	vec4 ambientColor = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vec4 diffuseColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	vec4 diffuseColor = vec4(0.3f);
 	vec4 specularColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	// Dot product gives us diffuse intensity
 	float diff = max(0.0, dot(normalize(vVaryingNormal), normalize(vVaryingLightDir)));

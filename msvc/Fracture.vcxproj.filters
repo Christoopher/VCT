@@ -45,6 +45,9 @@
     <ClCompile Include="..\src\ObjLoader.cpp">
       <Filter>Source Files\ObjLoader</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\quaternion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\OpenGLViewer.h">
@@ -70,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="..\src\ObjModel.h">
       <Filter>Header Files\ObjLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\quaternion.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
