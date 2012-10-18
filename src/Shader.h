@@ -148,13 +148,13 @@ private:
 		std::string fullPath;
 		ss >> fullPath;
 
-		FILE *file = fopen( fullPath.c_str(), "r");
+		FILE *file = fopen(filename, "r");
 		if(file == NULL)
 		{
 			_printError("I/O error", "Cannot open shader file!");
 			return 0;
 		}
-		int bytesinfile = _filelength(fullPath.c_str());
+		int bytesinfile = _filelength(filename);
 	
 		if(bytesinfile == NULL)
 		{

@@ -14,7 +14,6 @@
 #include <string.h>
 #include <math.h>
 
-
 #define PI 3.141592
 
 
@@ -801,6 +800,7 @@ static Model* generateModel(Mesh* mesh)
 
 Model* LoadModel(char* name)
 {
+	fprintf(stderr, "Loading model...\n");
 	Model* model = 0;
 	Mesh* mesh = LoadOBJ(name);
 
@@ -812,7 +812,7 @@ Model* LoadModel(char* name)
 	generateNormals(mesh);
 
 	model = generateModel(mesh);
-
+	fprintf(stderr, "Model Loaded...\n");
 	return model;
 }
 

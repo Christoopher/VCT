@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <vector>
 #include <math.h>
+#include <string>
 
 //GlEW and GLFW
 #include "glew.h"
@@ -70,6 +71,10 @@ unpack(float val)
 	int ival = floatBitsToInt(val);
 	return Vec3f( (ival & HIGH10) >> 20, (ival & MID10) >> 10, ival & LOW10);
 }
+
+
+std::string path;
+
 
 //Window properties and GUI-related
 int winw, winh;
@@ -597,8 +602,8 @@ void
 initShader()
 {	
 
-	phongShader.addShader("../../src/Shaders/phongShader.vert",Shader::VERTEX_SHADER);
-	phongShader.addShader("../../src/Shaders/phongShader.frag",Shader::FRAGMENT_SHADER);
+	phongShader.addShader(path+"../../src/Shaders/phongShader.vert",Shader::VERTEX_SHADER);
+	phongShader.addShader(path+"../../src/Shaders/phongShader.frag",Shader::FRAGMENT_SHADER);
 	phongShader.addUniform("modelViewMatrix");
 	phongShader.addUniform("projectionMatrix");
 	phongShader.addUniform("normalMatrix");
@@ -608,9 +613,9 @@ initShader()
 	phongShader.compile();
 	getOpenGLError();
 
-	voxelShader.addShader("../../src/Shaders/voxelShader.vert",Shader::VERTEX_SHADER);
-	voxelShader.addShader("../../src/Shaders/voxelShader.frag", Shader::FRAGMENT_SHADER);
-	voxelShader.addShader("../../src/Shaders/voxelShader.geom", Shader::GEOMETRY_SHADER);
+	voxelShader.addShader(path+"../../src/Shaders/voxelShader.vert",Shader::VERTEX_SHADER);
+	voxelShader.addShader(path+"../../src/Shaders/voxelShader.frag", Shader::FRAGMENT_SHADER);
+	voxelShader.addShader(path+"../../src/Shaders/voxelShader.geom", Shader::GEOMETRY_SHADER);
 	voxelShader.addUniform("modelViewMatrix");
 	voxelShader.addUniform("projectionMatrix");
 	voxelShader.addUniform("connectivity");
@@ -620,8 +625,8 @@ initShader()
 	voxelShader.compile();
 	getOpenGLError();
 
-	shader.addShader("../../src/Shaders/shader.vert", Shader::VERTEX_SHADER);
-	shader.addShader("../../src/Shaders/shader.frag", Shader::FRAGMENT_SHADER);
+	shader.addShader(path+"../../src/Shaders/shader.vert", Shader::VERTEX_SHADER);
+	shader.addShader(path+"../../src/Shaders/shader.frag", Shader::FRAGMENT_SHADER);
 	shader.addAttribute("vertex");
 	shader.addUniform("modelViewMatrix");
 	shader.addUniform("projectionMatrix");
@@ -629,9 +634,9 @@ initShader()
 	shader.compile();
 	getOpenGLError();
 	
-	fragListShader.addShader("../../src/Shaders/buildFragList.vert", Shader::VERTEX_SHADER);
-	fragListShader.addShader("../../src/Shaders/buildFragList.frag", Shader::FRAGMENT_SHADER);
-	fragListShader.addShader("../../src/Shaders/buildFragList.geom", Shader::GEOMETRY_SHADER);
+	fragListShader.addShader(path+"../../src/Shaders/buildFragList.vert", Shader::VERTEX_SHADER);
+	fragListShader.addShader(path+"../../src/Shaders/buildFragList.frag", Shader::FRAGMENT_SHADER);
+	fragListShader.addShader(path+"../../src/Shaders/buildFragList.geom", Shader::GEOMETRY_SHADER);
 	fragListShader.addAttribute("vertex");
 	fragListShader.addAttribute("normal");
 	fragListShader.addAttribute("texCoords");
@@ -746,7 +751,8 @@ initBuffers()
 	//Load model
 //C:\Users\Teneo\Documents\Visual Studio 2010\Projects\VCT\models\teapot.obj
 	//model = LoadModel("..\\..\\models\\teapot.obj");	
-	model = LoadModel("..\\..\\models\\blender.obj");
+	std::string modelPath = path+"..\\..\\models\\blender.obj";
+	model = LoadModel(const_cast<char *>(modelPath.c_str()));
 	//model = LoadModel("..\\..\\models\\head\\head.obj");	
 	//model = LoadModel("..\\..\\models\\dabsponza\\sponza.obj");	
 	BuildModelVAO(model, fragListShader(), "vertex", "normal", "texCoords");
@@ -873,6 +879,7 @@ void GLFWCALL MousePosFunc( int x, int y )
 	lastmousey = y;
 }
 
+
 //----------------------------------------------------------------------------//
 // Creates and sets up a window
 //----------------------------------------------------------------------------//
@@ -923,7 +930,15 @@ void OpenGl_initViewer(int width_, int height_)
 	cameraFrame.SetOrigin(0.0f,0.0f,5.0);
 	transformPipeline.SetMatrixStacks(modelViewMatrix,projectionMatrix);
 
-
+	TCHAR buffer[MAX_PATH];
+	GetModuleFileName( NULL, buffer, MAX_PATH );
+	GetCurrentDirectory(MAX_PATH,buffer);
+	std::wstring arr_w( buffer );
+	std::string arr_s( arr_w.begin(), arr_w.end() );
+	path = arr_s;
+	path += "\\";
+	//std::string::size_type pos = std::string( buffer ).find_last_of( "\\/" );
+	//std::string path = std::string( buffer ).substr( 0, pos);
 	
 	
 	initShader();
