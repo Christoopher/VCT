@@ -937,6 +937,7 @@ void OpenGl_initViewer(int width_, int height_)
 	std::string arr_s( arr_w.begin(), arr_w.end() );
 	path = arr_s;
 	path += "\\";
+	
 	//std::string::size_type pos = std::string( buffer ).find_last_of( "\\/" );
 	//std::string path = std::string( buffer ).substr( 0, pos);
 	
