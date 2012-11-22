@@ -1,4 +1,4 @@
-#version 330
+#version 420
 
 // Incoming per vertex... position and normal
 in vec3 vertex;
@@ -8,9 +8,12 @@ uniform mat4   modelViewMatrix;
 uniform mat3   normalMatrix;
 // Color to fragment program
 out vec3 vVaryingNormal;
+out vec3 ambientNormal;
 out vec3 vVaryingLightDir;
+out vec3 vFragPos;
 void main(void) 
 {
+	ambientNormal = normal;
 	vec3 vLightPosition = vec3(20.0f, 70.0f, 50.0f);
 	// Get surface normal in eye coordinates
 	vVaryingNormal = normalMatrix * normal;
@@ -21,6 +24,7 @@ void main(void)
 	vVaryingLightDir = normalize(vLightPosition - vPosition3);
 	// Don't forget to transform the geometry!
 	gl_Position = projectionMatrix * vec4(vertex,1.0);
+	vFragPos = vertex.xyz;
 }
 
 

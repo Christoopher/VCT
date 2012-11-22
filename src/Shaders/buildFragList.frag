@@ -14,7 +14,8 @@ layout(location = 0, index = 0) out vec4 fragColor;
 uniform float *d_xyzBuffer;
 
 //Grid texture
-coherent uniform layout(size4x32) image3D gridTex;
+layout(binding = 0) uniform image3D gridTex;
+
 
 //Scene bounding volume
 uniform vec3 boxMin;
@@ -89,10 +90,11 @@ void main(void)
 
 	float f = packCoords(ijk);	
 	ivec3 un = unpack(f);
-	d_xyzBuffer[counter*3] = float(ijk.x);
-	d_xyzBuffer[counter*3+1] = float(ijk.y);
-	d_xyzBuffer[counter*3+2] = float(ijk.z);
-	//imageStore(gridTex, ijk, vec4(1.0));
+	//d_xyzBuffer[counter*3] = float(ijk.x);
+	//d_xyzBuffer[counter*3+1] = float(ijk.y);
+	//d_xyzBuffer[counter*3+2] = float(ijk.z);
+	
+	imageStore(gridTex, ijk, vec4(1.0));
 	//imageStore(gridTex, ijkMin, vec4(ijkMin,1.0));
 	//imageStore(gridTex, ijkMax, vec4(ijkMax,1.0));
 

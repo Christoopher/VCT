@@ -130,7 +130,7 @@ GLuint volumeTexture;
 float MINX = -10, MAXX = 10, MINY = -10, MAXY = 10, MINZ = -10, MAXZ = 10;
 int GRIDDIM = 512;
 
-GLfloat * buffer;
+//GLfloat * buffer;
 
 //Full screen quad
 GLfloat quadVerts[] = {	-1.0f, -1.0f, 0.0f,
@@ -246,7 +246,7 @@ void TerminateViewer()
 	//Delete texture
 	glDeleteTextures(1,&volumeTexture);
 
-	delete buffer;
+//	delete buffer;
 
 	//Terminate the window
 	glfwTerminate();
@@ -328,14 +328,19 @@ voxelize()
 	glViewport(0,0,GRIDDIM, GRIDDIM);
 
 	fragListShader.use();
+
+
 	getOpenGLError();
 	
+
 	resetCounter();
 
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_3D,volumeTexture);
-	//glBindImageTextureEXT(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
-	//glUniform1i(glGetUniformLocation(fragListShader(),"gridTex"),0);	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,volumeTexture);
+	glBindImageTextureEXT(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_R8UI);
+	glUniform1i(glGetUniformLocation(fragListShader(),"gridTex"),0);	
+
+	getOpenGLError();
 
 	GLfloat ortho[16] =  { 1,0,0,0,  0,1,0,0, 0,0,1,0, 0,0,0,1 };
 
@@ -352,10 +357,11 @@ voxelize()
 	modelViewMatrix.Scale(0.005,0.005,0.005);
 	glUniformMatrix4fv(fragListShader.getUniform("modelViewMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewMatrix());
 	glUniformMatrix4fv(fragListShader.getUniform("projectionMatrix"), 1, GL_FALSE, ortho);	
-
+	
+	
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,0,acBuffer);
 	getOpenGLError();
-	
+
 	glDisable(GL_CULL_FACE);	
 	glDisable(GL_DEPTH_TEST);
 	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
@@ -371,7 +377,7 @@ voxelize()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-	readFragmentList();
+	//readFragmentList();
 		
 	//Remember to reset viewport
 	glViewport(0,0,winw, winh);
@@ -389,7 +395,7 @@ drawQuad()
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,volumeTexture);
-	glBindImageTexture(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
+	glBindImageTexture(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_R8UI);
 	glUniform1i(glGetUniformLocation(shader(),"gridTex"),0);
 
 	modelViewMatrix.PushMatrix();
@@ -525,6 +531,7 @@ void OpenGl_drawAndUpdate(bool &running)
 		//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RGBA, GL_FLOAT,buffer);
 		voxelize();
 		first = false;
+		/*
 		glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
 		//while(h_xyzBuffer.size() > 0) {
@@ -540,9 +547,10 @@ void OpenGl_drawAndUpdate(bool &running)
 		}
 		octree.buildTree(9,h_xyzBuffer);
 		h_xyzBuffer.clear();
+		*/
 		first = false;
 	}
-
+	/*
 	if(changed) {
 		octree.buildVoxel(currLevel,20);	
 
@@ -551,7 +559,7 @@ void OpenGl_drawAndUpdate(bool &running)
 		glBindBuffer(GL_ARRAY_BUFFER,0);
 		changed = false;
 	}
-	
+	*/
 	//drawQuad();
 	
 	
@@ -571,6 +579,12 @@ void OpenGl_drawAndUpdate(bool &running)
 	
 	
 	phongShader.use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,volumeTexture);
+	//glBindImageTextureEXT(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_R8UI);
+	glUniform1i(glGetUniformLocation(phongShader(),"gridTex"),0);	
+
 	modelViewMatrix.PushMatrix();
 	modelViewMatrix.Scale(0.005,0.005,0.005);
 	glUniformMatrix4fv(phongShader.getUniform("projectionMatrix"), 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix() );
@@ -607,9 +621,11 @@ initShader()
 	phongShader.addUniform("modelViewMatrix");
 	phongShader.addUniform("projectionMatrix");
 	phongShader.addUniform("normalMatrix");
+	phongShader.addUniform("gridTex");
 	phongShader.addAttribute("vertex");
 	phongShader.addAttribute("normal");
 	phongShader.addAttribute("texCoords");
+
 	phongShader.compile();
 	getOpenGLError();
 
@@ -650,6 +666,8 @@ initShader()
 	fragListShader.compile();
 	getOpenGLError();
 
+
+
 	glUseProgram(fragListShader());
 	//glUniform3f(fragListShader.getUniform("boxMin"),MINX,MINY,MINZ);
 	//glUniform3f(fragListShader.getUniform("boxMax"),MAXX,MAXY,MAXZ);	
@@ -665,8 +683,8 @@ void initTextures()
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	glGenTextures(1, &volumeTexture);
-	glBindTexture(GL_TEXTURE_3D, volumeTexture);	
-	glBindImageTexture(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_RGBA32F);
+	glBindTexture(GL_TEXTURE_3D, volumeTexture);
+	glBindImageTexture(0, volumeTexture, 0, GL_TRUE, 0,  GL_READ_WRITE, GL_R8UI);
 
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -676,36 +694,25 @@ void initTextures()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 	
 	getOpenGLError();
+
+
 	
-	buffer = new GLfloat[GRIDDIM*GRIDDIM*GRIDDIM*4];
+	GLuint * buffer = new GLuint[GRIDDIM*GRIDDIM*GRIDDIM];
 	int center = 256;
 	for(int k = 0; k < GRIDDIM; ++k) {
 		for(int j = 0; j < GRIDDIM; ++j) {
 			for(int i = 0; i < GRIDDIM; ++i) {
 				int offset = i + GRIDDIM*(j + GRIDDIM*k);
 
-				int ic = center - i;
-				int jc = center - j;
-				int kc = center - k;
-				float dist = sqrt(float(ic*ic + jc*jc + kc*kc));
-
-				float val = 0;
-				//if(dist < 50) {
-				//	val = 1;
-				//}
-
-				buffer[offset*4] = val;
-				buffer[offset*4+1] = val;
-				buffer[offset*4+2] = val;
-				buffer[offset*4+3] = val;
+				buffer[offset] = 0;
 			}
 		}
 	}
-
-	
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RGBA, GL_FLOAT,buffer);
 	
 	
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, GRIDDIM,GRIDDIM,GRIDDIM,0, GL_RED, GL_UNSIGNED_BYTE, buffer);
+	
+	//delete [] buffer;
 	
 	glBindTexture(GL_TEXTURE_3D, 0);
 	getOpenGLError();
@@ -947,7 +954,7 @@ void OpenGl_initViewer(int width_, int height_)
 	//Must be done after shader init
 	initBuffers();
 
-	//initTextures();
+	initTextures();
 }
 
 
